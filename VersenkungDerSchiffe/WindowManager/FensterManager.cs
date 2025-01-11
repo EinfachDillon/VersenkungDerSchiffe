@@ -18,7 +18,7 @@ namespace VersenkungDerSchiffe.WindowManager
         public startWindow startWindow;
         public gameWindow gameWindow;
         public GameManager spielmanager;
-
+        public endWindow endWindow;
 
         //Erstellt Fenster und zeigt es an
         public FensterManager()
@@ -26,7 +26,9 @@ namespace VersenkungDerSchiffe.WindowManager
 
             fenster = new MainWindow();
             fenster.Show();
-            startWindow = new startWindow(this);
+
+            switchstartWindow();
+
 
         }
 
@@ -34,15 +36,31 @@ namespace VersenkungDerSchiffe.WindowManager
         {
             this.spielmanager = spielmanager;
         }
+
+        public void switchstartWindow()
+        {
+            startWindow = new startWindow(this);
+        }
         public void switchGamewindow()
         {
             gameWindow = new gameWindow(this);
         }
+        public void switchEndWindow()
+        {
+            endWindow = new endWindow(this);
+        }
 
+        //clear das Raster
+        public void resetGrid()
+        { 
+            fenster.raster.Children.Clear();
+            fenster.raster.RowDefinitions.Clear();
+            fenster.raster.ColumnDefinitions.Clear(); 
+        }
 
 
         //fügt Knopf auf bestimmte Position im Raster hinzu
-        public void AddElementToWindow(UIElement element, int row, int column, int rowspan = 1, int colspan = 1)
+        public void AddElementToWindow(UIElement element, int row, int column, int rowspan = 1, int colspan = 1, string name = null)
         {
 
             Grid.SetRow(element, row);
@@ -50,10 +68,25 @@ namespace VersenkungDerSchiffe.WindowManager
             Grid.SetRowSpan(element, rowspan);
             Grid.SetColumnSpan(element, colspan);
 
+            if (name != null) { 
+            registerName(element, name);
+            }
 
             fenster.raster.Children.Add(element);
 
         }
+
+        public void removeElementfromWindow(string name)
+        {
+           
+                UIElement element = (UIElement)fenster.raster.FindName(name);
+
+            fenster.raster.Children.Remove(element);
+            fenster.raster.UnregisterName(name);
+
+
+        }
+
 
         //fügt Zeile hinzu
         public void AddRowToWindow(RowDefinition rowDef = null)
@@ -75,14 +108,8 @@ namespace VersenkungDerSchiffe.WindowManager
             fenster.raster.ColumnDefinitions.Add(colDef);
         }
 
-        //clear das Raster
-        public void resetGrid()
-        {
 
-            fenster.raster.Children.Clear();
-            fenster.raster.RowDefinitions.Clear();
-            fenster.raster.ColumnDefinitions.Clear();
-        }
+
 
         public void addTextToWindow(string text, int row, int column,int rowspan = 1, int columnspan =1, string name = null)
         {
@@ -90,14 +117,28 @@ namespace VersenkungDerSchiffe.WindowManager
             {
                 TextWrapping = TextWrapping.Wrap,
                 Text = text,
-                FontSize = 16,
+                FontSize = 30,
+                FontWeight = FontWeights.Bold,
+                FontFamily = new System.Windows.Media.FontFamily("Garamond"),
                 HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(0, 10, 0, 10)
             };
+               
+            AddElementToWindow(textBlock, row, column,rowspan,columnspan,name);
+        }
 
-            if (name != null) { fenster.raster.RegisterName(name, textBlock); }
-
-            AddElementToWindow(textBlock, row, column,rowspan,columnspan);
+        public void registerName(UIElement element,string name)
+        {
+            try
+            {
+                fenster.raster.RegisterName(name, element);
+            }
+            catch (Exception e)
+            {
+                fenster.raster.UnregisterName(name);
+                fenster.raster.RegisterName(name, element);
+            }
         }
 
         public void updateTextBlock(string text, string name)
@@ -105,6 +146,13 @@ namespace VersenkungDerSchiffe.WindowManager
             TextBlock textBlock = (TextBlock)fenster.raster.FindName(name);
             textBlock.Text = text;
         }
+
+        public void updateButtonContent(string text, string name)
+        {
+            Button button = (Button)fenster.raster.FindName(name);
+            button.Content = text;
+        }
+
 
         public void addManyColumns(int count, int widht=0)
         {
@@ -142,11 +190,11 @@ namespace VersenkungDerSchiffe.WindowManager
                     RowDefinition row = new RowDefinition();
                     row.Height = new GridLength(height);    
                     AddRowToWindow(row);
+
                 }
             }
         }
-
-
-
     }
+
+    
 }

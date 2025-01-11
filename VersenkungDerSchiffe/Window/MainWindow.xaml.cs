@@ -20,18 +20,7 @@ namespace VersenkungDerSchiffe
         {
             InitializeComponent();
         }
-        public void AddButton(Button button)
-        {
-            raster.Children.Add(button);
-        }
-        public void RemoveButton(Button button)
-        {
-            raster.Children.Remove(button);
-        }
-        public void addRow(RowDefinition rowDef)
-        {
-            raster.RowDefinitions.Add(rowDef);
-        }
+
 
     }
 }

@@ -9,7 +9,36 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Images\background.jpg" />
+    <None Remove="Images\cross.jpg" />
+    <None Remove="Images\cross.png" />
+    <None Remove="Images\destroyed.jpg" />
+    <None Remove="Images\destroyed.png" />
+    <None Remove="Images\empty.jpg" />
+    <None Remove="Images\fertig.jpg" />
+    <None Remove="Images\fertig.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="Window\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Images\background.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\cross.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\destroyed.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\empty.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\fertig.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
   </ItemGroup>
 
 </Project>

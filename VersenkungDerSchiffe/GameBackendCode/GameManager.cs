@@ -11,25 +11,36 @@ class GameManager
     public Spieler spieler1;
     public Spieler spieler2;
     FensterManager wmanager;
+    TextUpdater textUpdater;
     Boolean spielzug; //True Spieler 1 | False Spieler 2
     Boolean bootesetzten; //Treue Boote platzieren | False normalspielen
     Boolean ownBrett;
     
-    public GameManager() {
-        spielzug = true;
-        bootesetzten = true;
-        ownBrett = false;
-    }
 
     public void setFenstermanager(FensterManager wmanager)
     {
         this.wmanager = wmanager;
     }
 
+    public void intializeSpiel()
+    {
+        
+        textUpdater = new TextUpdater(wmanager);
+        intializeSpieler();
+    }
+
     public void intializeSpieler()
     {
-        spieler1 = new Spieler(wmanager);
-        spieler2 = new Spieler(wmanager); 
+        spieler1 = new Spieler(wmanager,textUpdater);
+        spieler2 = new Spieler(wmanager, textUpdater); 
+    }
+
+    public void initialzeVars()
+    {    
+        spielzug = true;
+        bootesetzten = true;
+        ownBrett = false;
+        intializeSpieler();
     }
 
 
@@ -38,33 +49,40 @@ class GameManager
         spielzug = !spielzug;
         if (spielzug)
         {
-            wmanager.updateTextBlock("SP-1", "Spieler");
             spieler1.spielzuguebrig = true;
         }
         else
         {
-            wmanager.updateTextBlock("SP-2", "Spieler");
-            spieler2.spielzuguebrig= true;
-            
+            spieler2.spielzuguebrig= true;           
         }
+        textUpdater.updateSpielertext(spielzug);
+        if (!bootesetzten)
+        {
+            ownBrett = false;
+            textUpdater.updateswitchSichtbaresButtonContent(ownBrett);
+        }
+        wmanager.gameWindow.addSichtschutz();
+        
     }
 
     // Dafür verantwortlich das richtige Array anzuzeigen
     public void finishButtonPressed()
     {
+        textUpdater.updateAnweisung(bootesetzten);
         switch ((bootesetzten, spielzug))
         {
             case (true, true):
-                if (/*spieler1.kreuzhelper.alleKreuzeGültig()*/true) {
+              //  if (true) {  
+                    if (spieler1.kreuzhelper.alleKreuzeGültig()) {
                     switchPlayers();
                     wmanager.gameWindow.refreshButtons(spieler2.eigenbrett.getField());
                 }
                 break;
             case (true, false):
-                if (/*spieler2.kreuzhelper.alleKreuzeGültig()*/true)
-                {
-                    bootesetzten = false;
-                    switchPlayers();
+               // if (true) { 
+                     if (spieler2.kreuzhelper.alleKreuzeGültig()) {
+                    switchVonBootesetzenZuSpielzug();
+                    switchPlayers();       
                     wmanager.gameWindow.refreshButtons(spieler1.schussbrett.getField());
                 }
                     break;
@@ -78,10 +96,23 @@ class GameManager
                 wmanager.gameWindow.refreshButtons(spieler1.schussbrett.getField());
                 break;
         }
+        
 
     }
 
-    public void showOwnBrettButtonPressed(Button button)
+    public void switchVonBootesetzenZuSpielzug()
+    {
+        bootesetzten = false;
+        wmanager.gameWindow.addswitchSichtbaresButton();
+        textUpdater.updateswitchSichtbaresButtonContent(false);
+    }
+
+
+
+
+    
+
+    public void switchSichtbaresButtonPressed()
     {
         
 
@@ -90,24 +121,22 @@ class GameManager
             case (true, true):
                 ownBrett = false;
                 spieler1.refreshSchussbrett();
-                button.Content = "Eigenbrett anzeigen!";
                 break;
             case (true, false):
                 ownBrett = true;
                 spieler1.refreshEigenbrett();
-                button.Content = "Schussbrett anzeigen!";
                 break;
             case (false, true):
                 ownBrett = false;
                 spieler2.refreshSchussbrett();
-                button.Content = "Eigenbrett anzeigen!";
                 break;
             case (false, false):
                 ownBrett = true;
                 spieler2.refreshEigenbrett();
-                button.Content = "Schussbrett anzeigen!";
                 break;
         }
+
+        textUpdater.updateswitchSichtbaresButtonContent(ownBrett);
     }
 
     //navigiert den Button Press zur richtigen Methode
@@ -126,22 +155,34 @@ class GameManager
                     break;
                 case (false, true):
                     spielerszug(x, y, spieler1, spieler2);
+                    if (playerWonGegen(spieler2))
+                    {
+                        MessageBox.Show("Spieler 1 hat gewonnen!");
+                        wmanager.switchEndWindow();
+                    }
+
                     break;
                 case (false, false):
                     spielerszug(x, y, spieler2, spieler1);
+                    if (playerWonGegen(spieler1))
+                    {
+                        MessageBox.Show("Spieler 2 hat gewonnen!");
+                        wmanager.switchEndWindow();
+                    }
                     break;
             }
         }
 
     }
 
-    public void spielerszug(int x, int y,Spieler eigen,Spieler gegner)
+
+    public void spielerszug(int x, int y, Spieler eigen, Spieler gegner)
     {
         Boolean hit;
         hit = schiffGetroffen(x, y, gegner);
         eigen.spielzug(x, y, hit);
-        if (hit) { gegner.eigenbrett.setFieldInfo(x, y, 2); }
-        if (playerWonGegen(gegner)) { MessageBox.Show("Spieler hat gewonnen!"); }
+        if (hit&&eigen.spielzuguebrig) { gegner.eigenbrett.setFieldInfo(x, y, 2); 
+        }
     }
 
     public Boolean schiffGetroffen(int x ,int y,Spieler gegner)
@@ -176,7 +217,7 @@ class GameManager
 
     public void endGame()
     {
-        MessageBox.Show("Spiel wird nun beendet");
+        wmanager.switchEndWindow();
     }
 
 

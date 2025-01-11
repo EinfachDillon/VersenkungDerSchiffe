@@ -5,7 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:VersenkungDerSchiffe"
         mc:Ignorable="d"
-        Title="MainWindow" Height="800" Width="800">
+        Title="MainWindow" Height="800" Width="800" >
+    <Viewbox Stretch="Uniform" StretchDirection="Both">
     <Grid x:Name="raster">
     </Grid>
+    </Viewbox>
 </Window>

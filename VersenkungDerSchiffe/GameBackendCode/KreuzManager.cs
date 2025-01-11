@@ -5,18 +5,21 @@ using System.Security.Policy;
 using System.Windows;
 using VersenkungDerSchiffe.SchiffVersenkungCode;
 
-class KreuzHelper
+
+class KreuzManager
     {
 
     //richtungkreuz bestimmt die richtung der letzten kruezes -1 => x-1 1 => x+1 -2 => y-1 2=>2
 
-    boatCounter bootZaehler;
+    public BoatCounter bootZaehler;
+    TextUpdater textUpdater;
 
     Spielbrett brett;
-    public KreuzHelper(Spielbrett brett)
+    public KreuzManager(Spielbrett brett,TextUpdater textUpdater)
     {
         this.brett = brett;
-        bootZaehler = new boatCounter();
+        bootZaehler = new BoatCounter();
+        this.textUpdater = textUpdater;
     }
 
     //checkt ob das Kreuz placement gültig, noch genug kreuze vorhanden, kein kreuz neben 
@@ -25,7 +28,7 @@ class KreuzHelper
         //kein Kreuz auf Kreuz?
         //kein diagonales umliegendes Kreuz?
         //keine nebenliegende Kreuze?
-        
+        if (kreuzAufKreuz(x,y)) { return false; }
         if (kreuzDiagonal(x, y)) { return false; }
         else if (bootZaehler.allBoatsPlaced() == true) { return false; }
         else if (!bootWeiterführenMoeglich(x, y)) { return false; }  
@@ -46,7 +49,7 @@ class KreuzHelper
     //Kreuzhelper
     private Boolean kreuzDiagonal(int x,int y)
     {
-        
+
         if (x!=0&&y!=0&&brett.getFieldInfo(x-1, y-1) == 1) { return true; } //C1 & C2 c4 =>C3
 
         else if (x!=9&&y!=9&&brett.getFieldInfo(x + 1, y+1) == 1) { return true; } //C3 & C2 c4 => C1
@@ -87,55 +90,77 @@ class KreuzHelper
         return (richtungx, richtungy);
     }
 
-    //implementieren wenn Kreuz zwischen 2 Kreuze gesetzt wird
-    //auch boot
-    public int getBootLaenge(int x,int y)
+
+    public (int,int,int) getBootLaengen(int x,int y)
     {
-        (int,int) richtungen = getRichtung(x,y);
+        (int, int, int) laenge = (0, 0, 0);
+
+        (int, int) richtungen = getRichtung(x, y);
 
         int richtungx = richtungen.Item1;
         int richtungy = richtungen.Item2;
 
-        int laenge = 0;
         if (richtungx == 0 && richtungy == 0) { return laenge; }
-        else
+
+        laenge.Item1 = getBootLaengeHelper(x, y, richtungx, richtungy);
+
+        //Richtung invertieren
+        richtungx = richtungx * -1;
+        richtungy = richtungy * -1;
+        if (x+richtungx!=-1 && x+richtungx!=10 && y+richtungy!=-1 && y+richtungy!=10)
         {
-
-            while (brett.getFieldInfo(x + richtungx, y + richtungy) == 1)
-            {
-                laenge++;
-                x = x + richtungx;
-                y = y + richtungy;
-
-                if (x + richtungx < 0 || y + richtungy < 0 || x + richtungx > 9 || y + richtungy > 9) { break; }
-            }
-
-            return laenge;
+            laenge.Item2 = getBootLaengeHelper(x, y, richtungx, richtungy);
         }
+
+        laenge.Item3 = laenge.Item1 + laenge.Item2 + 1;
+
+
+        return laenge;
+    }
+
+
+    public int getBootLaengeHelper(int x, int y,int richtungx, int richtungy)
+    {
+        int laenge = 0;
+
+        while (brett.getFieldInfo(x + richtungx, y + richtungy) == 1)
+        {
+            laenge++;
+            x = x + richtungx;
+            y = y + richtungy;
+
+            if (x + richtungx < 0 || y + richtungy < 0 || x + richtungx > 9 || y + richtungy > 9) { break; }
+        }
+
+        return laenge;
     }
 
     //zählt die Boote mit und sagt ob dieser noch verfügbar ist
     //Boot Klase
     public Boolean bootWeiterführenMoeglich(int x,int y)
     {
-        int bootlaenge = getBootLaenge(x, y);
-        if( bootlaenge < 1 ) { return true; }
-        else if ( bootlaenge < 5) {
+        
+
+        (int,int,int) bootlaenge = getBootLaengen(x, y);
+        int gesamtlaenge = bootlaenge.Item3;
+
+
+        if ( gesamtlaenge <= 1) { return true; }
+
+        else if ( gesamtlaenge <= 5) {
 
             
-            if (bootZaehler.isBoatAvailable(bootlaenge+1))
+
+            if (bootZaehler.isBoatAvailable(gesamtlaenge))
             {
-                
-                //vorheriges Boot aktivieren
-                bootZaehler.switchBoatActive(bootlaenge, true);
-                //neues Boot deaktivieren
-                bootZaehler.switchBoatActive(bootlaenge+1, false);
-               // bootZaehler.gibBoatArray();
+                boatSwitchHelper(bootlaenge, false);
+
                 return true;
             }
             else {
-                MessageBox.Show("Maximale Anzahl der Bootsorte " + bootZaehler.getBoatName(bootlaenge+1) + " erreicht!");
+                textUpdater.maxBootLaengeErreicht(bootZaehler.getBoatName(gesamtlaenge));
                 return false; }
+            
 
         }
         else {
@@ -144,16 +169,52 @@ class KreuzHelper
 
     }
 
+    public Boolean kreuzEntfernbar(int x,int y)
+    {
+        if (kreuzAufKreuz(x, y))
+        {
+            (int, int, int) bootlaenge = getBootLaengen(x, y);
+
+            if (bootlaenge.Item1<2||bootlaenge.Item2<2) { return true; }
+
+            if (bootZaehler.isBoatAvailable(bootlaenge.Item1)) {
+                bootZaehler.switchBoatActive(bootlaenge.Item1, false);
+                if (bootZaehler.isBoatAvailable(bootlaenge.Item2)) {
+                    bootZaehler.switchBoatActive(bootlaenge.Item1, true);
+                    return true;
+                }
+                else
+                {
+                    bootZaehler.switchBoatActive(bootlaenge.Item1, true);
+                }
+            }
+        }
+        return false;
+    }
+
+    public void boatSwitchHelper((int,int,int) bootlaenge,Boolean activate)
+    {
+        int gesamtlaenge = bootlaenge.Item3;
+
+        bootZaehler.switchBoatActive(gesamtlaenge, activate);
+
+        bootZaehler.switchBoatActive(bootlaenge.Item1, !activate);
+        bootZaehler.switchBoatActive(bootlaenge.Item2, !activate);
+
+    }
+
     //kinda Boot
     public void entferneKreuz(int x, int y)
     {
-        int bootlaenge = getBootLaenge(x, y);
 
-        if (bootlaenge >= 1)
-        {
-            bootZaehler.switchBoatActive(bootlaenge+1, true);
-            MessageBox.Show("Boot " + bootZaehler.getBoatName(bootlaenge + 1) + " entfernt!");
-        }
+        (int, int,int) bootlaenge = getBootLaengen(x, y);
+        int gesamtlaenge = bootlaenge.Item3;
+
+
+            boatSwitchHelper(bootlaenge, true);
+        
+
+
     }
 
     //Kreuzhelp
@@ -162,17 +223,19 @@ class KreuzHelper
         Boolean allePlatziert = bootZaehler.allBoatsPlaced();
         Boolean alleinstehend = alleinstehendeKreuze();
 
+        
+
         if (allePlatziert&&!alleinstehend)
         {
-            MessageBox.Show("Hier");
             return true;
         }
         else
         {
-            if (!allePlatziert) { MessageBox.Show("Platziere alle Boote"); }
-            if (alleinstehend) { MessageBox.Show("Entferne alle alleinestehenden Kreuze"); }
+            if (!allePlatziert) { textUpdater.updateAnweisungBootFinished(0); }
+            if (alleinstehend) { textUpdater.updateAnweisungBootFinished(1); }
             return false;
         }
+        
     }
 
     //Kreuzhelper
