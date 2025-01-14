@@ -15,7 +15,7 @@ using VersenkungDerSchiffe.WindowManager;
 
         gmanager.setFenstermanager(wmanager);
         wmanager.setGamemanager(gmanager);
-        gmanager.intializeSpiel();
+        //gmanager.intializeSpiel();
 
 
         game.Run();

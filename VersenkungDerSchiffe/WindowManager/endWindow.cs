@@ -53,7 +53,7 @@ internal class endWindow
     //BUTTON EVENTS
     public void RematchButton_Click(object sender, RoutedEventArgs e)
     {
-        manager.spielmanager.initialzeVars();
+        manager.spielmanager.intializeSpiel();
         manager.switchGamewindow();
     }
 

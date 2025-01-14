@@ -17,15 +17,16 @@ class GameManager
     Boolean ownBrett;
     
 
+
     public void setFenstermanager(FensterManager wmanager)
     {
         this.wmanager = wmanager;
     }
 
     public void intializeSpiel()
-    {
-        
+    { 
         textUpdater = new TextUpdater(wmanager);
+        initialzeVars();
         intializeSpieler();
     }
 
@@ -40,7 +41,7 @@ class GameManager
         spielzug = true;
         bootesetzten = true;
         ownBrett = false;
-        intializeSpieler();
+
     }
 
 
@@ -65,9 +66,10 @@ class GameManager
         
     }
 
-    // Dafür verantwortlich das richtige Array anzuzeigen
     public void finishButtonPressed()
     {
+        //Wenn der FinishButton gedrückt wird, wird erst geguckt ob dieser überhaupt gedrückt werden darf wenn ja geht der Spielzug zum anderen Spieler über
+
         textUpdater.updateAnweisung(bootesetzten);
         switch ((bootesetzten, spielzug))
         {
@@ -102,19 +104,18 @@ class GameManager
 
     public void switchVonBootesetzenZuSpielzug()
     {
+
+        //regelt den Übergang vom Bootesetzen Teil des SPiels zum Abschießen Teil
+
         bootesetzten = false;
         wmanager.gameWindow.addswitchSichtbaresButton();
         textUpdater.updateswitchSichtbaresButtonContent(false);
     }
 
-
-
-
-    
-
     public void switchSichtbaresButtonPressed()
     {
-        
+       
+        //switcht von den Eigenspielbrett zum Schussbrett des Spieler und anders herum
 
         switch ((spielzug,ownBrett))
         {
@@ -138,10 +139,12 @@ class GameManager
 
         textUpdater.updateswitchSichtbaresButtonContent(ownBrett);
     }
-
-    //navigiert den Button Press zur richtigen Methode
+ 
     public void buttonPressed(int x, int y)
     {
+
+        //navigiert den Button Press zur richtigen Methode
+
         if (ownBrett == false)
         {
             Boolean hit;
@@ -175,9 +178,10 @@ class GameManager
 
     }
 
-
     public void spielerszug(int x, int y, Spieler eigen, Spieler gegner)
     {
+
+
         Boolean hit;
         hit = schiffGetroffen(x, y, gegner);
         eigen.spielzug(x, y, hit);
@@ -198,11 +202,11 @@ class GameManager
 
     }
 
-
-    //sagt wenn alle Boote zerstört sind wird treue zurückgegeben
     public Boolean playerWonGegen(Spieler spieler)
     {
-        for(int x = 0; x < 10; x++)
+     //sagt wenn alle Boote zerstört sind wird treue zurückgegeben
+
+        for (int x = 0; x < 10; x++)
         {
             for(int y = 0; y < 10; y++)
             {

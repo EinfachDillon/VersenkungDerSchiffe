@@ -8,8 +8,12 @@ class Spieler
     FensterManager wmanager;
     public Spielbrett eigenbrett = new Spielbrett();
     public Spielbrett schussbrett = new Spielbrett();
+
     TextUpdater textUpdater;
+
     public KreuzManager kreuzhelper;
+    public Boats boote;
+
     public Boolean spielzuguebrig = true;
 
 
@@ -17,8 +21,8 @@ class Spieler
     
         this.wmanager = wmanager;
         this.textUpdater = textUpdater;
-        kreuzhelper = new KreuzManager(eigenbrett, textUpdater);
-        
+        boote = new Boats();
+        kreuzhelper = new KreuzManager(eigenbrett,boote, textUpdater);       
     }
 
     public void spielzug(int x, int y,Boolean getroffen)
@@ -48,14 +52,16 @@ class Spieler
         if (kreuzhelper.kreuzEntfernbar(x,y)== true)
         {
 
-            kreuzhelper.entferneKreuz(x,y);
+            boote.entferneBoot(kreuzhelper.getBootLaengen(x,y),x,y);
             eigenbrett.setFieldInfo(x, y, 0);
             
             textUpdater.updateletzteAktionPlacement(x, y, 0);
         }
         else if (kreuzhelper.placementGueltig(x, y))
         {
+            boote.platziereBoot(kreuzhelper.getBootLaengen(x, y),x,y);
             eigenbrett.setFieldInfo(x, y, 1);
+
             textUpdater.updateletzteAktionPlacement(x, y, 1);
 
         }
@@ -65,7 +71,7 @@ class Spieler
 
         }
         refreshEigenbrett();
-        textUpdater.refreshBootCounterText(kreuzhelper.bootZaehler.boatsToText());
+        textUpdater.refreshBootCounterText(boote.boatsToText());
     }
 
 

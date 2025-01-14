@@ -11,44 +11,90 @@ class KreuzManager
 
     //richtungkreuz bestimmt die richtung der letzten kruezes -1 => x-1 1 => x+1 -2 => y-1 2=>2
 
-    public BoatCounter bootZaehler;
+    public Boats boote;
     TextUpdater textUpdater;
-
     Spielbrett brett;
-    public KreuzManager(Spielbrett brett,TextUpdater textUpdater)
+
+
+    public KreuzManager(Spielbrett brett,Boats boote, TextUpdater textUpdater)
     {
         this.brett = brett;
-        bootZaehler = new BoatCounter();
+        this.boote = boote;
         this.textUpdater = textUpdater;
     }
 
-    //checkt ob das Kreuz placement gültig, noch genug kreuze vorhanden, kein kreuz neben 
+   
     public Boolean placementGueltig(int x,int y)
     {
-        //kein Kreuz auf Kreuz?
-        //kein diagonales umliegendes Kreuz?
-        //keine nebenliegende Kreuze?
+        /*kein Kreuz auf Kreuz?
+        kein diagonales umliegendes Kreuz?
+        darf man das Boot weiterführen?*/
+
         if (kreuzAufKreuz(x,y)) { return false; }
         if (kreuzDiagonal(x, y)) { return false; }
-        else if (bootZaehler.allBoatsPlaced() == true) { return false; }
+        else if (boote.allBoatsPlaced() == true) { return false; }
         else if (!bootWeiterführenMoeglich(x, y)) { return false; }  
         else { return true; }
 
     }
+    public Boolean kreuzEntfernbar(int x, int y)
+    {
+        //ist das Kreuz entfernbar, also ob das Boot Array noch Sinn macht wenn das eine Boot entfernt wird
 
-    //Kreuzhelper
-    public Boolean kreuzAufKreuz(int x,int y)
+        if (kreuzAufKreuz(x, y))
+        {
+            (int, int, int) bootlaenge = getBootLaengen(x, y);
+
+            if (bootlaenge.Item1 < 2 || bootlaenge.Item2 < 2) { return true; }
+
+            if (boote.isBoatAvailable(bootlaenge.Item1))
+            {
+                boote.switchBoatActive(bootlaenge.Item1, false);
+                if (boote.isBoatAvailable(bootlaenge.Item2))
+                {
+                    boote.switchBoatActive(bootlaenge.Item1, true);
+                    return true;
+                }
+                else
+                {
+                    boote.switchBoatActive(bootlaenge.Item1, true);
+                }
+            }
+        }
+        return false;
+    }
+
+
+    public Boolean alleKreuzeGültig()
+    {
+        //checkt ob alle Kreuze gültig sind, keine zusaätlichen Boote und keine alleinstehende Kreuze vorhanden sind
+
+        Boolean allePlatziert = boote.allBoatsPlaced();
+        Boolean alleinstehend = alleinstehendeKreuze();
+
+        if (allePlatziert && !alleinstehend)
+        {
+            return true;
+        }
+        else
+        {
+            if (!allePlatziert) { textUpdater.updateAnweisungBootFinished(0); }
+            if (alleinstehend) { textUpdater.updateAnweisungBootFinished(1); }
+            return false;
+        }
+
+    }
+
+
+    private Boolean kreuzAufKreuz(int x,int y)
     {
         if (brett.getFieldInfo(x, y) == 1) { return true; }
         else { return false; }
     }
 
-
-
-    //returned true wenn kreuz diagonal zum zu setzenden kreuz ist
-    //Kreuzhelper
     private Boolean kreuzDiagonal(int x,int y)
     {
+        //returned true wenn kreuz diagonal zum zu setzenden kreuz ist
 
         if (x!=0&&y!=0&&brett.getFieldInfo(x-1, y-1) == 1) { return true; } //C1 & C2 c4 =>C3
 
@@ -60,10 +106,10 @@ class KreuzManager
         else { return false; }
     }
 
-    //wenn kreuz neben pos, dann Boot weiterführen
-    //hilfreich für Boot aber wig. Kreuzhelper
     private (int,int) getRichtung(int x, int y)
     {
+        //gibt die x,y Richtung des direkt umliegenden Kreuzes an
+
         int richtungx = 0;
         int richtungy = 0;
 
@@ -93,6 +139,8 @@ class KreuzManager
 
     public (int,int,int) getBootLaengen(int x,int y)
     {
+        //gibt die Bootlänge wieder unteilt in laenge seite1 vom Kreuz, laenge seite2 von Kreuz und insegesamte länge mit dem zuplatzierenden Kreuz
+
         (int, int, int) laenge = (0, 0, 0);
 
         (int, int) richtungen = getRichtung(x, y);
@@ -107,6 +155,8 @@ class KreuzManager
         //Richtung invertieren
         richtungx = richtungx * -1;
         richtungy = richtungy * -1;
+
+        //wenn das Kreuz an keinem Border ist dann die Länge der anderes Seite überprüfen
         if (x+richtungx!=-1 && x+richtungx!=10 && y+richtungy!=-1 && y+richtungy!=10)
         {
             laenge.Item2 = getBootLaengeHelper(x, y, richtungx, richtungy);
@@ -119,8 +169,10 @@ class KreuzManager
     }
 
 
-    public int getBootLaengeHelper(int x, int y,int richtungx, int richtungy)
+    private int getBootLaengeHelper(int x, int y,int richtungx, int richtungy)
     {
+        //hilfs Klasse um die Länge der Reihe an Kreuzen zu bestimmen die am zulegenden Kreuz ist
+
         int laenge = 0;
 
         while (brett.getFieldInfo(x + richtungx, y + richtungy) == 1)
@@ -135,11 +187,9 @@ class KreuzManager
         return laenge;
     }
 
-    //zählt die Boote mit und sagt ob dieser noch verfügbar ist
-    //Boot Klase
-    public Boolean bootWeiterführenMoeglich(int x,int y)
+    private Boolean bootWeiterführenMoeglich(int x,int y)
     {
-        
+        //checkt ob die weiterführung des Boot möglich ist, die Länge darf nicht über 5 sein, das Boot muss verfügbar sein zum platzieren, anschließend wird das Boot das BootArray verändert
 
         (int,int,int) bootlaenge = getBootLaengen(x, y);
         int gesamtlaenge = bootlaenge.Item3;
@@ -148,98 +198,27 @@ class KreuzManager
         if ( gesamtlaenge <= 1) { return true; }
 
         else if ( gesamtlaenge <= 5) {
-
-            
-
-            if (bootZaehler.isBoatAvailable(gesamtlaenge))
+            if (boote.isBoatAvailable(gesamtlaenge))
             {
-                boatSwitchHelper(bootlaenge, false);
-
                 return true;
             }
             else {
-                textUpdater.maxBootLaengeErreicht(bootZaehler.getBoatName(gesamtlaenge));
+                textUpdater.maxBootLaengeErreicht(boote.getBoatName(gesamtlaenge));
                 return false; }
-            
-
         }
         else {
             
             return false; }
-
     }
 
-    public Boolean kreuzEntfernbar(int x,int y)
-    {
-        if (kreuzAufKreuz(x, y))
-        {
-            (int, int, int) bootlaenge = getBootLaengen(x, y);
-
-            if (bootlaenge.Item1<2||bootlaenge.Item2<2) { return true; }
-
-            if (bootZaehler.isBoatAvailable(bootlaenge.Item1)) {
-                bootZaehler.switchBoatActive(bootlaenge.Item1, false);
-                if (bootZaehler.isBoatAvailable(bootlaenge.Item2)) {
-                    bootZaehler.switchBoatActive(bootlaenge.Item1, true);
-                    return true;
-                }
-                else
-                {
-                    bootZaehler.switchBoatActive(bootlaenge.Item1, true);
-                }
-            }
-        }
-        return false;
-    }
-
-    public void boatSwitchHelper((int,int,int) bootlaenge,Boolean activate)
-    {
-        int gesamtlaenge = bootlaenge.Item3;
-
-        bootZaehler.switchBoatActive(gesamtlaenge, activate);
-
-        bootZaehler.switchBoatActive(bootlaenge.Item1, !activate);
-        bootZaehler.switchBoatActive(bootlaenge.Item2, !activate);
-
-    }
-
-    //kinda Boot
-    public void entferneKreuz(int x, int y)
-    {
-
-        (int, int,int) bootlaenge = getBootLaengen(x, y);
-        int gesamtlaenge = bootlaenge.Item3;
 
 
-            boatSwitchHelper(bootlaenge, true);
-        
 
 
-    }
 
-    //Kreuzhelp
-    public Boolean alleKreuzeGültig()
-    {
-        Boolean allePlatziert = bootZaehler.allBoatsPlaced();
-        Boolean alleinstehend = alleinstehendeKreuze();
 
-        
 
-        if (allePlatziert&&!alleinstehend)
-        {
-            return true;
-        }
-        else
-        {
-            if (!allePlatziert) { textUpdater.updateAnweisungBootFinished(0); }
-            if (alleinstehend) { textUpdater.updateAnweisungBootFinished(1); }
-            return false;
-        }
-        
-    }
-
-    //Kreuzhelper
-    public Boolean alleinstehendeKreuze()
+    private Boolean alleinstehendeKreuze()
     {
         (int, int) richtung = (0,0);
         for (int x = 0; x < 10; x++)

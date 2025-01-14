@@ -65,7 +65,7 @@ class startWindow
 
     private void StartButton_Click(object sender, RoutedEventArgs e)
     {
-        manager.spielmanager.initialzeVars();
+        manager.spielmanager.intializeSpiel();
         manager.switchGamewindow();
     }
 
